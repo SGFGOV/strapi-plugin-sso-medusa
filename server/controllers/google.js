@@ -1,4 +1,5 @@
 const axios = require("axios");
+<<<<<<< HEAD
 const {v4} = require('uuid');
 const {getService} = require("@strapi/admin/server/utils");
 
@@ -9,16 +10,44 @@ const configValidation = () => {
   }
   throw new Error('GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET are required')
 }
+=======
+const { v4 } = require("uuid");
+const { getService } = require("@strapi/admin/server/utils");
+
+const configValidation = () => {
+  const config = strapi.config.get("plugin.strapi-plugin-sso");
+  if (
+    config["GOOGLE_OAUTH_CLIENT_ID"] &&
+    config["GOOGLE_OAUTH_CLIENT_SECRET"]
+  ) {
+    return config;
+  }
+  throw new Error(
+    "GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET are required"
+  );
+};
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
 
 /**
  * Common constants
  */
+<<<<<<< HEAD
 const OAUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/auth'
 const OAUTH_TOKEN_ENDPOINT = 'https://accounts.google.com/o/oauth2/token'
 const OAUTH_USER_INFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v1/userinfo'
 const OAUTH_GRANT_TYPE = 'authorization_code'
 const OAUTH_RESPONSE_TYPE = 'code'
 const OAUTH_SCOPE = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile'
+=======
+const OAUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/auth";
+const OAUTH_TOKEN_ENDPOINT = "https://accounts.google.com/o/oauth2/token";
+const OAUTH_USER_INFO_ENDPOINT =
+  "https://www.googleapis.com/oauth2/v1/userinfo";
+const OAUTH_GRANT_TYPE = "authorization_code";
+const OAUTH_RESPONSE_TYPE = "code";
+const OAUTH_SCOPE =
+  "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
 
 /**
  * Redirect to Google
@@ -26,11 +55,19 @@ const OAUTH_SCOPE = 'https://www.googleapis.com/auth/userinfo.email https://www.
  * @return {Promise<*>}
  */
 async function googleSignIn(ctx) {
+<<<<<<< HEAD
   const config = configValidation()
   const redirectUri = encodeURIComponent(config['GOOGLE_OAUTH_REDIRECT_URI'])
   const url = `${OAUTH_ENDPOINT}?client_id=${config['GOOGLE_OAUTH_CLIENT_ID']}&redirect_uri=${redirectUri}&scope=${OAUTH_SCOPE}&response_type=${OAUTH_RESPONSE_TYPE}`
   ctx.set('Location', url)
   return ctx.send({}, 302)
+=======
+  const config = configValidation();
+  const redirectUri = encodeURIComponent(config["GOOGLE_OAUTH_REDIRECT_URI"]);
+  const url = `${OAUTH_ENDPOINT}?client_id=${config["GOOGLE_OAUTH_CLIENT_ID"]}&redirect_uri=${redirectUri}&scope=${OAUTH_SCOPE}&response_type=${OAUTH_RESPONSE_TYPE}`;
+  ctx.set("Location", url);
+  return ctx.send({}, 302);
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
 }
 
 /**
@@ -39,6 +76,7 @@ async function googleSignIn(ctx) {
  * @return {Promise<*>}
  */
 async function googleSignInCallback(ctx) {
+<<<<<<< HEAD
   const config = configValidation()
   const httpClient = axios.create()
   const tokenService = getService('token')
@@ -56,10 +94,30 @@ async function googleSignInCallback(ctx) {
   params.append('client_secret', config['GOOGLE_OAUTH_CLIENT_SECRET']);
   params.append('redirect_uri', config['GOOGLE_OAUTH_REDIRECT_URI']);
   params.append('grant_type', OAUTH_GRANT_TYPE);
+=======
+  const config = configValidation();
+  const httpClient = axios.create();
+  const tokenService = getService("token");
+  const userService = getService("user");
+  const oauthService = strapi.plugin("strapi-plugin-sso").service("oauth");
+  const roleService = strapi.plugin("strapi-plugin-sso").service("role");
+
+  if (!ctx.query.code) {
+    return ctx.send(oauthService.renderSignUpError(`code Not Found`));
+  }
+
+  const params = new URLSearchParams();
+  params.append("code", ctx.query.code);
+  params.append("client_id", config["GOOGLE_OAUTH_CLIENT_ID"]);
+  params.append("client_secret", config["GOOGLE_OAUTH_CLIENT_SECRET"]);
+  params.append("redirect_uri", config["GOOGLE_OAUTH_REDIRECT_URI"]);
+  params.append("grant_type", OAUTH_GRANT_TYPE);
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
 
   try {
     const response = await httpClient.post(OAUTH_TOKEN_ENDPOINT, params, {
       headers: {
+<<<<<<< HEAD
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     })
@@ -75,12 +133,35 @@ async function googleSignInCallback(ctx) {
 
     const email = config['GOOGLE_ALIAS'] ? oauthService.addGmailAlias(userResponse.data.email, config['GOOGLE_ALIAS']) : userResponse.data.email
     const dbUser = await userService.findOneByEmail(email)
+=======
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+    const userInfoEndpoint = `${OAUTH_USER_INFO_ENDPOINT}?access_token=${response.data.access_token}`;
+    const userResponse = await httpClient.get(userInfoEndpoint);
+
+    // for GSuite
+    if (config["GOOGLE_GSUITE_HD"]) {
+      if (userResponse.data.hd !== config["GOOGLE_GSUITE_HD"]) {
+        throw new Error("Unauthorized email address");
+      }
+    }
+
+    const email = config["GOOGLE_ALIAS"]
+      ? oauthService.addGmailAlias(
+          userResponse.data.email,
+          config["GOOGLE_ALIAS"]
+        )
+      : userResponse.data.email;
+    const dbUser = await userService.findOneByEmail(email);
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
     let activateUser;
     let jwtToken;
 
     if (dbUser) {
       // Already registered
       activateUser = dbUser;
+<<<<<<< HEAD
       jwtToken = await tokenService.createJwtToken(dbUser)
     } else {
       // Register a new account
@@ -90,12 +171,29 @@ async function googleSignInCallback(ctx) {
       })) : []
 
       const defaultLocale = oauthService.localeFindByHeader(ctx.request.headers)
+=======
+      jwtToken = await tokenService.createJwtToken(dbUser);
+    } else {
+      // Register a new account
+      const googleRoles = await roleService.googleRoles();
+      const roles =
+        googleRoles && googleRoles["roles"]
+          ? googleRoles["roles"].map((role) => ({
+              id: role,
+            }))
+          : [];
+
+      const defaultLocale = oauthService.localeFindByHeader(
+        ctx.request.headers
+      );
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
       activateUser = await oauthService.createUser(
         email,
         userResponse.data.family_name,
         userResponse.data.given_name,
         defaultLocale,
         roles
+<<<<<<< HEAD
       )
       jwtToken = await tokenService.createJwtToken(activateUser)
 
@@ -113,10 +211,38 @@ async function googleSignInCallback(ctx) {
   } catch (e) {
     console.error(e)
     ctx.send(oauthService.renderSignUpError(e.message))
+=======
+      );
+      jwtToken = await tokenService.createJwtToken(activateUser);
+
+      // Trigger webhook
+      await oauthService.triggerWebHook(activateUser);
+    }
+    // Login Event Call
+    oauthService.triggerSignInSuccess(activateUser);
+
+    // Client-side authentication persistence and redirection
+    const nonce = v4();
+    const html = oauthService.renderSignUpSuccess(
+      jwtToken,
+      activateUser,
+      nonce
+    );
+    ctx.set("Content-Security-Policy", `script-src 'nonce-${nonce}'`);
+    ctx.send(html);
+  } catch (e) {
+    console.error(e);
+    ctx.send(oauthService.renderSignUpError(e.message));
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
   }
 }
 
 module.exports = {
   googleSignIn,
+<<<<<<< HEAD
   googleSignInCallback
 }
+=======
+  googleSignInCallback,
+};
+>>>>>>> 51e21ca52c565b8551b8e1b91cf62a91a6938f38
